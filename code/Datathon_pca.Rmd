@@ -1,0 +1,96 @@
+---
+title: "datathon"
+author: "wanxing2"
+date: "2/16/2020"
+output: html_document
+---
+
+
+```{r}
+require(rgl,  lib.loc="C:/TFS/Rlib/")
+require(plotrix,  lib.loc="C:/TFS/Rlib/")
+library(SciViews)
+library(corrplot)
+require(ggplot2)
+require(reshape)
+require("gridExtra")
+library(gridExtra)
+```
+```{r}
+data = read.csv('/Users/wanxing/Downloads/part1_merge.csv')
+data = na.omit(data)
+data$NAICS.id = as.numeric(data$NAICS.id)
+data$STATE = as.numeric(data$STATE)
+summary(data)
+data = data[c(-4,-24)]
+head(data)
+```
+
+
+```{r}
+colnames(data)[6] <- "AvgIncome"
+colnames(data)[7] <- "Density"
+colnames(data)[24] <- "African"
+colnames(data)[25] <- "Indian.Alaska"
+colnames(data)[27] <- "Hawaiian"
+data.pca <- pcomp(~., data = data)
+d_pca = cbind(cbind(data, data.pca$scores), car = rownames(data))
+#d.pca
+screeplot(data.pca)
+
+#arrow plot
+plot(data.pca, which = "correlations")
+
+M<-cor(data)
+corrplot(M, method="circle")
+```
+
+```{r}
+Loadings <- as.data.frame(data.pca$loadings[,1:3])
+hm = cbind(car = rownames(Loadings), Loadings)
+hmm = melt(hm, id = c("car"))
+ggplot(hmm, aes(variable, car)) + geom_tile(aes(fill = value),
+     colour = "white") + scale_fill_gradient(low = "red",
+     high = "green")
+```
+
+```{r}
+plot(cars.pca, which = "correlations") 
+```
+
+
+```{r}
+M<-cor(data)
+corrplot(M, method="circle",cl.ratio = 1, cl.align = "c")
+```
+
+```{r}
+k <- kmeans(data, 5, nstart=25, iter.max=1000)
+new = cbind(data,cluster = k$cluster)
+```
+
+
+```{r}
+new = cbind(data,cluster = k$cluster)
+new = cbind(car = rownames(new),new)
+new = new[order(new$cluster),]
+#ordering of cars on cluster
+new$car <- factor(new$car, levels=(new$car)[order(new$cluster)])
+new = cbind(new, variable="cluster")
+
+g = ggplot(new, aes(variable, car)) + geom_tile(aes(fill = cluster),
+     colour = "white") + scale_fill_gradient(low = "red",
+     high = "green") +  theme(legend.position="none")
+
+myplotslist2 <- list()
+myplotslist2[[1]] = g
+var = c("AvgIncome", "Density", "African","White")
+
+for (i in 1:length(var)){
+    t= paste("new[[\"variable\"]] = \"", var[[i]],"\"; a = ggplot(new, aes(variable, car)) + geom_tile(aes(fill = ", var[[i]], "),colour = \"white\") + scale_fill_gradient(low = \"red\", high = \"green\") + theme(axis.title.y=element_blank(), axis.text.y=element_blank(),legend.position=\"none\"); myplotslist2[[i+1]] = a")
+    eval(parse(text=t))
+}
+
+grid.arrange(grobs=myplotslist2, ncol=(length(var)+1), widths=rep(100,length(var)+1))
+```
+

@@ -1,0 +1,72 @@
+---
+title: "datathon data merging"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#install.packages('tidyverse')
+library(tidyverse)
+```
+
+```{r}
+avgincome <- read.csv("~/A432/avgincome.csv")
+View(avgincome)
+```
+
+```{r}
+part1 <- read.csv("440/part11.csv")
+View(part1)
+```
+
+```{r}
+dat1 = part1 %>% select(3, 5:7, 10) %>% rename(
+  zipcode = GEO.id2)
+head(dat1)
+```
+
+```{r}
+avgi = avgincome %>%
+  rename(zipcode = ZIPCODE,
+  Avg_total_income = Avg.total.income) %>% select(1:2, 8)
+  head(avgi)
+```
+```{r}
+#merge(avgi, dat1, by.avgi = "zipcode", by.dat1 = "zipcode")
+dat2 = merge(x = dat1, y = avgi, by = "zipcode", all.x=TRUE)
+dim(dat2)
+```
+
+```{r}
+populationDensity <- read_excel("440/populationDensity.xls")
+populationDensity[-8, ]
+names(populationDensity)[1] <- 'STATE'
+names(populationDensity)[2] <- 'populationDensity'
+populationDensity$STATE <- as.factor(populationDensity$STATE )
+
+dat3 = merge(x = dat2, y = populationDensity, by = 'STATE', all.x = TRUE)
+
+```
+
+```{r}
+agedata <- read_csv("440/agedata.csv")
+agedata$state <- as.factor(agedata$state)
+names(agedata)[1] <- 'STATE'
+dat4 = merge(x = dat3, y = agedata, by = 'STATE', all.x = TRUE)
+```
+```{r}
+racedata <- read_csv("440/racedata.csv")
+racedata $state <- as.factor(racedata $state)
+names(racedata )[1] <- 'STATE'
+fin_dat = merge(x = dat4, y = racedata , by = 'STATE', all.x = TRUE)
+```
+
+
+```{r}
+write.csv(fin_dat,"fin_dat.csv", row.names = FALSE)
+```
+
+
